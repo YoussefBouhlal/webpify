@@ -20,7 +20,7 @@ class ComposerStaticInit03afd232c91538f0746a51b5c864091d
     public static $prefixDirsPsr4 = array (
         'Webpify\\' => 
         array (
-            0 => __DIR__ . '/../..' . '/Functions',
+            0 => __DIR__ . '/../..' . '/Includes',
         ),
         'PHPCSStandards\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => 
         array (

@@ -5,7 +5,7 @@
 	"license": "GPL-2.0-or-later",
 	"autoload": {
 		"psr-4": {
-			"Webpify\\": "Functions/"
+			"Webpify\\": "Includes/"
 		}
 	},
 	"require-dev": {
@@ -17,7 +17,7 @@
 		}
 	},
 	"scripts": {
-		"format": "phpcbf --standard=phpcs.xml.dist --report-summary --report-source || true",
-		"lint": "phpcs --standard=phpcs.xml.dist"
+		"lint": "phpcs --standard=phpcs.xml",
+		"format": "phpcbf --standard=phpcs.xml --report-summary --report-source || true"
 	}
 }

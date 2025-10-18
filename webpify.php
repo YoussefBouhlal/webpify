@@ -3,9 +3,9 @@
  * Plugin Name:       WebPify
  * Plugin URI:        https://github.com/YoussefBouhlal/webpify
  * Description:       Give your WordPress site a performance boost — effortlessly convert and serve modern image formats (WebP & AVIF) for faster pages and better SEO.
- * Tags:              image optimization, webp, avif, image converter, performance, speed, seo, image compression, next-gen images, wordpress optimization, media, convert images, image formats, web performance
+ * Tags:              image optimization, webp, avif, image converter, performance, speed, seo, image compression, next-gen images, WordPress optimization, media, convert images, image formats, web performance
  * Version:           1.0.0
- * Requires at least: 6.0.0
+ * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Youssef Bouhlal
  * Author URI:        pro.youssef.bouhlal@gmail.com
@@ -17,20 +17,41 @@
  * @package           Webpify
  */
 
-if ( ! defined('ABSPATH') ) {
+namespace Webpify;
+
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Include Composer's autoload file.
-if ( file_exists( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' ) ) {
-	require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
-} else {
-	add_action( 'admin_notices', function() {
-		?>
+/**
+ * Define constants.
+ */
+const VERSION             = '1.0.0';
+const PLUGIN_FILE         = __FILE__;
+const PLUGIN_REQUIREMENTS = array(
+	'php_version' => '7.4',
+	'wp_version'  => '6.0',
+	'wc_version'  => '5.3',
+);
+
+/**
+ * Autoload packages.
+ */
+$webpify_autoloader = __DIR__ . '/vendor/autoload.php';
+
+if ( ! is_readable( $webpify_autoloader ) ) {
+	add_action(
+		'admin_notices',
+		function () {
+			?>
 			<div class="notice notice-error">
 				<p><?php echo esc_html_e( 'WebPify: Composer autoload file not found. Please run `composer install`.', 'webpify' ); ?></p>
 			</div>
-		<?php
-	} );
+			<?php
+		}
+	);
+
 	return;
 }
+
+require $webpify_autoloader;

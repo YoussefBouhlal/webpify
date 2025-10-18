@@ -1,0 +1,64 @@
+# Copyright (C) 2025 Youssef Bouhlal
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: WebPify 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/webpify\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-10-18T13:14:52+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.10.0\n"
+"X-Domain: webpify\n"
+
+#. Plugin Name of the plugin
+#: webpify.php
+msgid "WebPify"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: webpify.php
+msgid "https://github.com/YoussefBouhlal/webpify"
+msgstr ""
+
+#. Description of the plugin
+#: webpify.php
+msgid "Give your WordPress site a performance boost — effortlessly convert and serve modern image formats (WebP & AVIF) for faster pages and better SEO."
+msgstr ""
+
+#. Author of the plugin
+#: webpify.php
+msgid "Youssef Bouhlal"
+msgstr ""
+
+#. Author URI of the plugin
+#: webpify.php
+msgid "pro.youssef.bouhlal@gmail.com"
+msgstr ""
+
+#: Includes/Main.php:40
+#: Includes/Main.php:49
+msgid "Cheatin&#8217; huh?"
+msgstr ""
+
+#. Translators: The minimum PHP version
+#: Includes/Main.php:90
+msgid "WordPress Plugin Boilerplate requires a minimum PHP version of %s."
+msgstr ""
+
+#. Translators: The minimum WP version
+#: Includes/Main.php:95
+msgid "WordPress Plugin Boilerplate requires a minimum WordPress version of %s."
+msgstr ""
+
+#. Translators: The minimum WC version
+#: Includes/Main.php:100
+msgid "WordPress Plugin Boilerplate requires a minimum WooCommerce version of %s."
+msgstr ""
+
+#: webpify.php:48
+msgid "WebPify: Composer autoload file not found. Please run `composer install`."
+msgstr ""

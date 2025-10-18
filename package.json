@@ -1,0 +1,19 @@
+{
+	"name": "webpify",
+	"version": "1.0.0",
+	"description": "Give your WordPress site a performance boost — effortlessly convert and serve modern image formats (WebP & AVIF) for faster pages and better SEO.",
+	"author": "Youssef Bouhlal",
+	"license": "GPL-2.0-or-later",
+	"scripts": {
+		"start": "wp-scripts start",
+		"build": "wp-scripts build",
+		"lint:js": "wp-scripts lint-js ./src",
+		"lint:css": "wp-scripts lint-style './src/**/*.scss'",
+		"lint:json": "wp-scripts lint-pkg-json ./src",
+		"packages-update": "wp-scripts packages-update",
+		"plugin-zip": "wp-scripts plugin-zip"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^30.22.0"
+	}
+}
