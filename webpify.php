@@ -31,7 +31,6 @@ const PLUGIN_FILE         = __FILE__;
 const PLUGIN_REQUIREMENTS = array(
 	'php_version' => '7.4',
 	'wp_version'  => '6.0',
-	'wc_version'  => '5.3',
 );
 
 /**
@@ -55,3 +54,5 @@ if ( ! is_readable( $webpify_autoloader ) ) {
 }
 
 require $webpify_autoloader;
+
+Main::bootstrap();

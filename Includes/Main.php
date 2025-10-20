@@ -25,8 +25,6 @@ final class Main {
 
 		add_action( 'plugins_loaded', array( __CLASS__, 'load' ) );
 
-		add_action( 'init', array( __CLASS__, 'init' ) );
-
 		// Perform other actions when plugin is loaded.
 		do_action( 'webpify_loaded' );
 	}
@@ -37,7 +35,7 @@ final class Main {
 	 * @since 1.0.0
 	 */
 	public function __clone() {
-		_doing_it_wrong( __FUNCTION__, esc_html__( 'Cheatin&#8217; huh?', 'webpify' ), '1.0.0' );
+		_doing_it_wrong( __FUNCTION__, esc_html( 'Cheatin&#8217; huh?' ), '1.0.0' );
 	}
 
 	/**
@@ -46,7 +44,7 @@ final class Main {
 	 * @since 1.0.0
 	 */
 	public function __wakeup() {
-		_doing_it_wrong( __FUNCTION__, esc_html__( 'Cheatin&#8217; huh?', 'webpify' ), '1.0.0' );
+		_doing_it_wrong( __FUNCTION__, esc_html( 'Cheatin&#8217; huh?' ), '1.0.0' );
 	}
 
 	/**
@@ -70,9 +68,6 @@ final class Main {
 
 		// Set up localisation.
 		self::load_plugin_textdomain();
-
-		// Init action.
-		do_action( 'webpify_loaded' );
 	}
 
 	/**
@@ -86,18 +81,15 @@ final class Main {
 		global $wp_version;
 
 		if ( ! version_compare( PHP_VERSION, PLUGIN_REQUIREMENTS['php_version'], '>=' ) ) {
-			/* Translators: The minimum PHP version */
-			$errors[] = sprintf( esc_html__( 'WordPress Plugin Boilerplate requires a minimum PHP version of %s.', 'webpify' ), PLUGIN_REQUIREMENTS['php_version'] );
+			$errors[] = 1;
 		}
 
 		if ( ! version_compare( $wp_version, PLUGIN_REQUIREMENTS['wp_version'], '>=' ) ) {
-			/* Translators: The minimum WP version */
-			$errors[] = sprintf( esc_html__( 'WordPress Plugin Boilerplate requires a minimum WordPress version of %s.', 'webpify' ), PLUGIN_REQUIREMENTS['wp_version'] );
+			$errors[] = 2;
 		}
 
 		if ( isset( PLUGIN_REQUIREMENTS['wc_version'] ) && ( ! defined( 'WC_VERSION' ) || ! version_compare( WC_VERSION, PLUGIN_REQUIREMENTS['wc_version'], '>=' ) ) ) {
-			/* Translators: The minimum WC version */
-			$errors[] = sprintf( esc_html__( 'WordPress Plugin Boilerplate requires a minimum WooCommerce version of %s.', 'webpify' ), PLUGIN_REQUIREMENTS['wc_version'] );
+			$errors[] = 3;
 		}
 
 		if ( empty( $errors ) ) {
@@ -109,11 +101,21 @@ final class Main {
 			add_action(
 				'admin_notices',
 				function () use ( $errors ) {
+
+					$errors_notices = array(
+						/* Translators: The minimum PHP version */
+						1 => sprintf( esc_html__( 'WebPify requires a minimum PHP version of %s.', 'webpify' ), PLUGIN_REQUIREMENTS['php_version'] ),
+						/* Translators: The minimum WP version */
+						2 => sprintf( esc_html__( 'WebPify requires a minimum WordPress version of %s.', 'webpify' ), PLUGIN_REQUIREMENTS['wp_version'] ),
+						/* Translators: The minimum WC version */
+						3 => sprintf( esc_html__( 'WebPify requires a minimum WooCommerce version of %s.', 'webpify' ), PLUGIN_REQUIREMENTS['wc_version'] ),
+					);
+
 					?>
 					<div class="notice notice-error">
 						<?php
 						foreach ( $errors as $error ) {
-							echo '<p>' . esc_html( $error ) . '</p>';
+							echo '<p>' . esc_html( $errors_notices[ $error ] ) . '</p>';
 						}
 						?>
 					</div>
