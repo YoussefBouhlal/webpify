@@ -8,6 +8,7 @@
 
 namespace Webpify;
 
+use Webpify\Utils;
 use Webpify\Admin\Main as Admin;
 use Webpify\Front\Main as Front;
 
@@ -133,6 +134,6 @@ final class Main {
 	 * Load Localisation files.
 	 */
 	private static function load_plugin_textdomain() {
-		load_plugin_textdomain( 'webpify', false, plugin_basename( __DIR__ ) . '/languages' );
+		load_plugin_textdomain( 'webpify', false, Utils::plugin_path() . '/languages' );
 	}
 }

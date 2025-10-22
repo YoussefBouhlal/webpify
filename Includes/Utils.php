@@ -74,4 +74,22 @@ final class Utils {
 	public static function ajax_url() {
 		return admin_url( 'admin-ajax.php', 'relative' );
 	}
+
+	/**
+	 * Get the path to the build directory.
+	 *
+	 * @param  string $filename Filename.
+	 */
+	public static function build_path( $filename ) {
+		return self::plugin_path() . '/build/' . $filename;
+	}
+
+	/**
+	 * Get the url to the build directory.
+	 *
+	 * @param  string $filename Filename.
+	 */
+	public static function build_url( $filename ) {
+		return self::plugin_url() . '/build/' . $filename;
+	}
 }

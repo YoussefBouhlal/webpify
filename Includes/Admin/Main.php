@@ -9,6 +9,8 @@
 
 namespace Webpify\Admin;
 
+use Webpify\Admin\Settings;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -23,5 +25,8 @@ final class Main {
 	 *
 	 * @return void
 	 */
-	public static function hooks() {}
+	public static function hooks() {
+
+		Settings::hooks();
+	}
 }

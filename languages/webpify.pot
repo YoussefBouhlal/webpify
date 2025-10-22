@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-10-20T21:34:34+00:00\n"
+"POT-Creation-Date: 2025-10-22T21:28:55+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: webpify\n"
@@ -39,21 +39,54 @@ msgstr ""
 msgid "pro.youssef.bouhlal@gmail.com"
 msgstr ""
 
+#: Includes/Admin/Settings.php:53
+#: Includes/Admin/Settings.php:54
+msgid "Webpify"
+msgstr ""
+
+#: Includes/Admin/Settings.php:67
+msgid "Loading…"
+msgstr ""
+
 #. Translators: The minimum PHP version
-#: Includes/Main.php:107
+#: Includes/Main.php:108
 msgid "WebPify requires a minimum PHP version of %s."
 msgstr ""
 
 #. Translators: The minimum WP version
-#: Includes/Main.php:109
+#: Includes/Main.php:110
 msgid "WebPify requires a minimum WordPress version of %s."
 msgstr ""
 
 #. Translators: The minimum WC version
-#: Includes/Main.php:111
+#: Includes/Main.php:112
 msgid "WebPify requires a minimum WooCommerce version of %s."
 msgstr ""
 
 #: webpify.php:47
 msgid "WebPify: Composer autoload file not found. Please run `composer install`."
+msgstr ""
+
+#: build/settings.js:164
+#: src/js/settings.js:13
+#: build/settings.js:69
+msgid "Placeholder for message control"
+msgstr ""
+
+#: build/settings.js:168
+#: src/js/settings.js:16
+#: build/settings.js:72
+msgid "Placeholder for display control"
+msgstr ""
+
+#: build/settings.js:172
+#: src/js/settings.js:20
+#: build/settings.js:76
+msgid "Appearance"
+msgstr ""
+
+#: build/settings.js:176
+#: src/js/settings.js:24
+#: build/settings.js:80
+msgid "Placeholder for size control"
 msgstr ""

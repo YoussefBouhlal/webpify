@@ -5,8 +5,8 @@
 	"author": "Youssef Bouhlal",
 	"license": "GPL-2.0-or-later",
 	"scripts": {
-		"start": "wp-scripts start",
-		"build": "wp-scripts build",
+		"start": "wp-scripts start src/js/*.js",
+		"build": "wp-scripts build src/js/*.js",
 		"lint:js": "wp-scripts lint-js ./src",
 		"lint:css": "wp-scripts lint-style './src/**/*.scss'",
 		"lint:json": "wp-scripts lint-pkg-json ./src",
