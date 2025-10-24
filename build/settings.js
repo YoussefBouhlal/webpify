@@ -157,26 +157,58 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const SettingsPage = () => {
-  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.Panel, {
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.PanelBody, {
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.PanelRow, {
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Placeholder for message control', 'webpify')
-        })
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.PanelRow, {
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Placeholder for display control', 'webpify')
-        })
+  const [format, setFormat] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_2__.useState)(2);
+  const [quality, setQuality] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_2__.useState)(2);
+  const [value, setValue] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_2__.useState)(false);
+  const onClick = () => {
+    setValue(!value);
+  };
+  return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.Panel, {
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.PanelBody, {
+      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.SelectControl, {
+        __next40pxDefaultSize: false,
+        __nextHasNoMarginBottom: false,
+        label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Format', 'webpify'),
+        value: format,
+        options: [{
+          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Off', 'webpify'),
+          value: 1
+        }, {
+          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('WebP', 'webpify'),
+          value: 2
+        }, {
+          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('AVIF', 'webpify'),
+          value: 3
+        }],
+        onChange: setFormat
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.SelectControl, {
+        __next40pxDefaultSize: false,
+        __nextHasNoMarginBottom: false,
+        label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Quality', 'webpify'),
+        value: quality,
+        options: [{
+          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Low', 'webpify'),
+          value: 1
+        }, {
+          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Medium', 'webpify'),
+          value: 2
+        }, {
+          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('High', 'webpify'),
+          value: 3
+        }],
+        onChange: setQuality
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.ToggleControl, {
+        __nextHasNoMarginBottom: false,
+        label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Do not compress images already in same format', 'webpify'),
+        checked: value,
+        onChange: () => setValue(state => !state)
+      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.Button, {
+        variant: "primary",
+        onClick: onClick,
+        __next40pxDefaultSize: true,
+        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Save', 'webpify')
       })]
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.PanelBody, {
-      title: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Appearance', 'webpify'),
-      initialOpen: false,
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_4__.PanelRow, {
-        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
-          children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_3__.__)('Placeholder for size control', 'webpify')
-        })
-      })
-    })]
+    })
   });
 };
 _wordpress_dom_ready__WEBPACK_IMPORTED_MODULE_1___default()(() => {

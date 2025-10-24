@@ -62,9 +62,11 @@ final class Settings {
 	 * Render webpify option page.
 	 */
 	public static function render_webpify() {
-		printf(
-			'<div class="wrap" id="webpify-settings">%s</div>',
-			esc_html__( 'Loading…', 'webpify' )
-		);
+		?>
+			<div class="wrap">
+				<h1><?php esc_html_e( 'Webpify', 'webpify' ); ?></h1>
+				<div id="webpify-settings"></div>
+			</div>
+		<?php
 	}
 }
