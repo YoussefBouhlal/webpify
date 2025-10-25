@@ -59,13 +59,8 @@ final class Main {
 			return;
 		}
 
-		if ( Utils::is_request( 'admin' ) ) {
-			Admin::hooks();
-		}
-
-		if ( Utils::is_request( 'frontend' ) ) {
-			Front::hooks();
-		}
+		Admin::hooks();
+		Front::hooks();
 
 		// Set up localisation.
 		self::load_plugin_textdomain();

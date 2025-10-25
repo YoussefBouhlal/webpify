@@ -26,6 +26,7 @@ final class Settings {
 	public static function hooks() {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_styles_scripts' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'add_options_pages' ) );
+		add_action( 'rest_api_init', array( __CLASS__, 'register_settings' ) );
 	}
 
 	/**
@@ -50,8 +51,8 @@ final class Settings {
 	 */
 	public static function add_options_pages() {
 		add_options_page(
-			__( 'Webpify', 'webpify' ),
-			__( 'Webpify', 'webpify' ),
+			__( 'WebPify', 'webpify' ),
+			__( 'WebPify', 'webpify' ),
 			'manage_options',
 			'webpify',
 			array( __CLASS__, 'render_webpify' )
@@ -64,9 +65,42 @@ final class Settings {
 	public static function render_webpify() {
 		?>
 			<div class="wrap">
-				<h1><?php esc_html_e( 'Webpify', 'webpify' ); ?></h1>
-				<div id="webpify-settings"></div>
+				<h1><?php esc_html_e( 'WebPify Settings', 'webpify' ); ?></h1>
+				<div id="JS-webpify-settings" class="webpify-settings"></div>
 			</div>
 		<?php
+	}
+
+	/**
+	 * Register webpify settings page.
+	 */
+	public static function register_settings() {
+		$default      = array(
+			'format'  => '1',
+			'display' => '1',
+		);
+		$show_in_rest = array(
+			'schema' => array(
+				'type'       => 'object',
+				'properties' => array(
+					'format'  => array(
+						'type' => 'string',
+					),
+					'display' => array(
+						'type' => 'string',
+					),
+				),
+			),
+		);
+
+		register_setting(
+			'options',
+			'webpify_settings',
+			array(
+				'type'         => 'object',
+				'default'      => $default,
+				'show_in_rest' => $show_in_rest,
+			),
+		);
 	}
 }
