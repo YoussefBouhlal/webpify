@@ -20,6 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Settings {
 
+	const OPTION_NAME = 'webpify_settings';
+
 	/**
 	 * Hook in methods.
 	 */
@@ -38,11 +40,17 @@ final class Settings {
 
 		if ( 'settings_page_webpify' === $hook_suffix ) {
 			$asset = include Utils::build_path( 'settings.asset.php' );
+			wp_enqueue_style( 'wp-components' );
 			wp_enqueue_style( 'webpify_settings', Utils::build_url( 'settings.css' ), array(), $asset['version'] );
 			wp_enqueue_script( 'webpify_settings', Utils::build_url( 'settings.js' ), $asset['dependencies'], $asset['version'], array( 'in_footer' => true ) );
 			wp_set_script_translations( 'webpify_settings', 'webpify', Utils::plugin_path() . '/languages' );
-
-			wp_enqueue_style( 'wp-components' );
+			wp_localize_script(
+				'webpify_settings',
+				'WEBPIFY_SETTINGS',
+				array(
+					'option_name' => self::OPTION_NAME,
+				),
+			);
 		}
 	}
 

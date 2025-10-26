@@ -10,6 +10,7 @@
 namespace Webpify\Admin;
 
 use Webpify\Admin\Settings;
+use Webpify\Admin\RewriteRules;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -28,5 +29,6 @@ final class Main {
 	public static function hooks() {
 
 		Settings::hooks();
+		RewriteRules::hooks();
 	}
 }
