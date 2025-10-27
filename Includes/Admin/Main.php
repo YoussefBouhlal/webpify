@@ -11,6 +11,7 @@ namespace Webpify\Admin;
 
 use Webpify\Admin\Settings;
 use Webpify\Admin\RewriteRules;
+use Webpify\Admin\Media;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -30,5 +31,6 @@ final class Main {
 
 		Settings::hooks();
 		RewriteRules::hooks();
+		Media::hooks();
 	}
 }
