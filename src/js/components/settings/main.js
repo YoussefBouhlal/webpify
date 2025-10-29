@@ -10,9 +10,12 @@ import Generale from './generale';
 import Bulk from './bulk';
 import Footer from './footer';
 
+const { optionName, ajaxUrl, nonce } = WEBPIFY_SETTINGS; // eslint-disable-line no-undef
+
 const Main = () => {
 	const [ format, setFormat ] = useState();
 	const [ display, setDisplay ] = useState();
+	const [ startBulk, setStartBulk ] = useState();
 
 	const { createSuccessNotice, createErrorNotice, removeNotice } =
 		useDispatch( noticesStore );
@@ -29,9 +32,47 @@ const Main = () => {
 	/**
 	 * Do bulk optimization
 	 */
-	const doBulkOptimization = () => {
-		//TODO: add bulk optimization
-		console.log( 'doBulkOptimization' );
+	const startBulkOptimization = () => {
+		setStartBulk( true );
+
+		const form = new FormData();
+		form.append( 'action', 'webpify_bulk_optimization_start' );
+		form.append( '_wpnonce', nonce );
+
+		fetch( ajaxUrl, {
+			method: 'POST',
+			body: form,
+		} )
+			.then( ( r ) => r.json() )
+			.then( ( res ) => {
+				console.log( res );
+			} )
+			.catch( ( err ) => {
+				console.log( err );
+			} );
+	};
+
+	/**
+	 * Stop bulk optimization
+	 */
+	const stopBulkOptimization = () => {
+		setStartBulk( false );
+
+		const form = new FormData();
+		form.append( 'action', 'webpify_bulk_optimization_end' );
+		form.append( '_wpnonce', nonce );
+
+		fetch( ajaxUrl, {
+			method: 'POST',
+			body: form,
+		} )
+			.then( ( r ) => r.json() )
+			.then( ( res ) => {
+				console.log( res );
+			} )
+			.catch( ( err ) => {
+				console.log( err );
+			} );
 	};
 
 	/**
@@ -52,7 +93,7 @@ const Main = () => {
 			path: '/wp/v2/settings',
 			method: 'POST',
 			data: {
-				[ WEBPIFY_SETTINGS.option_name ]: { // eslint-disable-line no-undef, prettier/prettier
+				[ optionName ]: {
 					format,
 					display,
 				},
@@ -74,7 +115,9 @@ const Main = () => {
 				<Bulk
 					display={ display }
 					setDisplay={ setDisplay }
-					doBulkOptimization={ doBulkOptimization }
+					stopBulkOptimization={ stopBulkOptimization }
+					startBulkOptimization={ startBulkOptimization }
+					startBulk={ startBulk }
 				/>
 				<Footer saveSettings={ saveSettings } />
 			</Panel>

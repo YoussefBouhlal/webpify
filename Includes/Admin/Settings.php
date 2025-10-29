@@ -48,7 +48,9 @@ final class Settings {
 				'webpify_settings',
 				'WEBPIFY_SETTINGS',
 				array(
-					'option_name' => self::OPTION_NAME,
+					'optionName' => self::OPTION_NAME,
+					'ajaxUrl'    => Utils::ajax_url(),
+					'nonce'      => wp_create_nonce( 'webpify_settings_bulk' ),
 				),
 			);
 		}

@@ -23,6 +23,8 @@ final class Media {
 	 */
 	public static function hooks() {
 		add_filter( 'wp_handle_upload_prefilter', array( __CLASS__, 'image_optimizition' ) );
+		add_action( 'wp_ajax_webpify_bulk_optimization_start', array( __CLASS__, 'bulk_optimization_start' ) );
+		add_action( 'wp_ajax_webpify_bulk_optimization_end', array( __CLASS__, 'bulk_optimization_end' ) );
 	}
 
 	/**
@@ -66,6 +68,32 @@ final class Media {
 		}
 
 		return $file;
+	}
+
+	/**
+	 * Start bulk optimization
+	 */
+	public static function bulk_optimization_start() {
+
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) );
+		if ( ! wp_verify_nonce( $nonce, 'webpify_settings_bulk' ) ) {
+			wp_send_json_error( __( 'Refresh the page and try again.', 'webpify' ) );
+		}
+
+		wp_send_json_success();
+	}
+
+	/**
+	 * End bulk optimization
+	 */
+	public static function bulk_optimization_end() {
+
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) );
+		if ( ! wp_verify_nonce( $nonce, 'webpify_settings_bulk' ) ) {
+			wp_send_json_error( __( 'Refresh the page and try again.', 'webpify' ) );
+		}
+
+		wp_send_json_success();
 	}
 
 	/**

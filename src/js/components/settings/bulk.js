@@ -6,7 +6,13 @@ import {
 	Button,
 } from '@wordpress/components';
 
-const Bulk = ( { display, setDisplay, doBulkOptimization } ) => {
+const Bulk = ( {
+	display,
+	setDisplay,
+	startBulkOptimization,
+	stopBulkOptimization,
+	startBulk,
+} ) => {
 	return (
 		<PanelBody title={ __( 'Bulk settings', 'webpify' ) }>
 			<div className="webpify-settings__field-container">
@@ -38,13 +44,24 @@ const Bulk = ( { display, setDisplay, doBulkOptimization } ) => {
 					<div className="webpify-settings__button__label">
 						{ __( 'Bulk optimization', 'webpify' ) }
 					</div>
-					<Button
-						variant="secondary"
-						onClick={ doBulkOptimization }
-						__next40pxDefaultSize
-					>
-						{ __( 'Start', 'webpify' ) }
-					</Button>
+					{ startBulk ? (
+						<Button
+							isDestructive
+							variant="secondary"
+							onClick={ stopBulkOptimization }
+							__next40pxDefaultSize
+						>
+							{ __( 'Stop', 'webpify' ) }
+						</Button>
+					) : (
+						<Button
+							variant="secondary"
+							onClick={ startBulkOptimization }
+							__next40pxDefaultSize
+						>
+							{ __( 'Start', 'webpify' ) }
+						</Button>
+					) }
 				</div>
 			</PanelRow>
 		</PanelBody>
