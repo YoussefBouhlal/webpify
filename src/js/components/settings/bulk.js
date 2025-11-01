@@ -4,6 +4,7 @@ import {
 	PanelRow,
 	RadioControl,
 	Button,
+	ProgressBar,
 } from '@wordpress/components';
 
 const Bulk = ( {
@@ -12,6 +13,7 @@ const Bulk = ( {
 	startBulkOptimization,
 	stopBulkOptimization,
 	startBulk,
+	progressText,
 } ) => {
 	return (
 		<PanelBody title={ __( 'Bulk settings', 'webpify' ) }>
@@ -28,12 +30,8 @@ const Bulk = ( {
 							value: '1',
 						},
 						{
-							label: __( 'Use <picture> tags', 'webpify' ),
-							value: '2',
-						},
-						{
 							label: __( 'Use rewrite rules', 'webpify' ),
-							value: '3',
+							value: '2',
 						},
 					] }
 					onChange={ setDisplay }
@@ -45,14 +43,19 @@ const Bulk = ( {
 						{ __( 'Bulk optimization', 'webpify' ) }
 					</div>
 					{ startBulk ? (
-						<Button
-							isDestructive
-							variant="secondary"
-							onClick={ stopBulkOptimization }
-							__next40pxDefaultSize
-						>
-							{ __( 'Stop', 'webpify' ) }
-						</Button>
+						<>
+							<Button
+								isDestructive
+								variant="secondary"
+								onClick={ stopBulkOptimization }
+								__next40pxDefaultSize
+							>
+								{ __( 'Stop', 'webpify' ) }
+							</Button>
+							<div className="webpify-settings__progress">
+								<ProgressBar />
+							</div>
+						</>
 					) : (
 						<Button
 							variant="secondary"
@@ -62,6 +65,9 @@ const Bulk = ( {
 							{ __( 'Start', 'webpify' ) }
 						</Button>
 					) }
+					<div className="webpify-settings__description">
+						{ progressText }
+					</div>
 				</div>
 			</PanelRow>
 		</PanelBody>

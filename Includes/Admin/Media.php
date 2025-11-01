@@ -9,6 +9,8 @@
 
 namespace Webpify\Admin;
 
+use Webpify\Utils;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -19,6 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Media {
 
 	const META_ALREADY_OPTIMIZED = 'webpify_already_optimized';
+	const META_OPTIMIZED_DATA    = 'webpify_optimized_data';
+	const META_OPTIMIZED_ERROR   = 'webpify_optimized_error';
 	const OPTION_BULK_STATUS     = 'webpify_bulk_status';
 	const OPTION_BULK_TOTAL      = 'webpify_bulk_total';
 	const OPTION_BULK_CURRENT    = 'webpify_bulk_current';
@@ -31,8 +35,12 @@ final class Media {
 	 */
 	public static function hooks() {
 		add_filter( 'wp_handle_upload_prefilter', array( __CLASS__, 'image_optimizition' ) );
+		add_action( 'delete_attachment', array( __CLASS__, 'before_attachment_is_deleted' ) );
 		add_action( 'wp_ajax_webpify_bulk_optimization_start', array( __CLASS__, 'bulk_optimization_start' ) );
 		add_action( 'wp_ajax_webpify_bulk_optimization_end', array( __CLASS__, 'bulk_optimization_end' ) );
+		add_action( 'wp_ajax_webpify_bulk_optimization_progress', array( __CLASS__, 'bulk_optimization_progress' ) );
+		//phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
+		add_filter( 'cron_schedules', array( __CLASS__, 'crons_registrations' ) );
 		add_action( self::CRON_BULK_HOOK, array( __CLASS__, 'bulk_optimization_excute' ) );
 	}
 
@@ -44,8 +52,8 @@ final class Media {
 	public static function image_optimizition( $file ) {
 
 		$settings = get_option( Settings::OPTION_NAME );
-		$format   = $settings['format'] ?? '1';
-		$format   = absint( $format );
+		$format   = $settings['format'] ?? Settings::FORMAT_WEBP;
+		$format   = Utils::is_php_compatible_avif() ? $format : Settings::FORMAT_WEBP;
 
 		if ( ! self::validate_image( $file ) ) {
 			return $file;
@@ -58,10 +66,10 @@ final class Media {
 			return false;
 		}
 
-		if ( 1 === $format ) {
+		if ( Settings::FORMAT_WEBP === $format ) {
 			$optimized_image = imagewebp( $gd_image, $file_tmp_name, 75 );
 			$optimized_type  = 'image/webp';
-		} elseif ( 2 === $format ) {
+		} elseif ( Settings::FORMAT_AVIF === $format ) {
 			$optimized_image = imageavif( $gd_image, $file_tmp_name, 50 );
 			$optimized_type  = 'image/avif';
 		}
@@ -77,6 +85,19 @@ final class Media {
 		}
 
 		return $file;
+	}
+
+	/**
+	 * Before attachment is deleted
+	 *
+	 * @param int $post_id attachment id.
+	 */
+	public static function before_attachment_is_deleted( $post_id ) {
+		$optimised_data = get_post_meta( $post_id, self::META_OPTIMIZED_DATA, true );
+
+		if ( ! empty( $optimised_data ) ) {
+			self::delete_optimized_files( $optimised_data );
+		}
 	}
 
 	/**
@@ -137,6 +158,45 @@ final class Media {
 	}
 
 	/**
+	 * Bulk optimization progress
+	 */
+	public static function bulk_optimization_progress() {
+
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) );
+		if ( ! wp_verify_nonce( $nonce, 'webpify_settings_bulk' ) ) {
+			wp_send_json_error( __( 'Refresh the page and try again.', 'webpify' ) );
+		}
+
+		$status     = get_option( self::OPTION_BULK_STATUS, '' );
+		$total      = (int) get_option( self::OPTION_BULK_TOTAL, 0 );
+		$current    = (int) get_option( self::OPTION_BULK_CURRENT, 0 );
+		$is_running = $status === 'running' ? true : false;
+
+		$data = array(
+			'running'  => $is_running,
+			'progress' => $current . '/' . $total,
+			'percent'  => $total ? round( abs( ( $current / $total ) ) * 100 ) . '%' : '0%',
+		);
+
+		wp_send_json_success( $data );
+	}
+
+	/**
+	 * Register cron jobs
+	 *
+	 * @param array $schedules Schedules.
+	 */
+	public static function crons_registrations( $schedules ) {
+
+		$schedules[ self::CRON_BULK_RECURRENCE ] = array(
+			'interval' => MINUTE_IN_SECONDS,
+			'display'  => __( 'Every minute', 'webpify' ),
+		);
+
+		return $schedules;
+	}
+
+	/**
 	 * Bulk optimization excute
 	 */
 	public static function bulk_optimization_excute() {
@@ -170,6 +230,19 @@ final class Media {
 					$new_sizes[ $key ] = $result;
 				}
 			}
+
+			if ( ! empty( $new_sizes ) ) {
+				update_post_meta( $id, self::META_ALREADY_OPTIMIZED, '1' );
+				update_post_meta( $id, self::META_OPTIMIZED_DATA, $new_sizes );
+				delete_post_meta( $id, self::META_OPTIMIZED_ERROR );
+			} else {
+				delete_post_meta( $id, self::META_ALREADY_OPTIMIZED );
+				delete_post_meta( $id, self::META_OPTIMIZED_DATA );
+				update_post_meta( $id, self::META_OPTIMIZED_ERROR, '1' );
+			}
+
+			++$current;
+			update_option( self::OPTION_BULK_CURRENT, $current, false );
 		}
 
 		self::end_cron_job();
@@ -241,9 +314,24 @@ final class Media {
 	}
 
 	/**
+	 * Delete optimized files
+	 *
+	 * @param array $data data.
+	 */
+	private static function delete_optimized_files( $data ) {
+		foreach ( $data as $value ) {
+			$path = $value['path'] ?? '';
+
+			if ( ! empty( $path ) && file_exists( $path ) ) {
+				wp_delete_file( $path );
+			}
+		}
+	}
+
+	/**
 	 * End cron job
 	 */
-	private function end_cron_job() {
+	private static function end_cron_job() {
 		self::clear_bulk_optimization();
 		exit;
 	}
@@ -252,7 +340,7 @@ final class Media {
 	 * Clear bulk optimization
 	 */
 	private static function clear_bulk_optimization() {
-		update_option( self::OPTION_BULK_STATUS, 'finish' );
+		update_option( self::OPTION_BULK_STATUS, 'finish', false );
 
 		if ( wp_next_scheduled( self::CRON_BULK_HOOK ) ) {
 			wp_clear_scheduled_hook( self::CRON_BULK_HOOK );
@@ -360,8 +448,8 @@ final class Media {
 		}
 
 		$settings = get_option( Settings::OPTION_NAME );
-		$format   = $settings['format'] ?? '1';
-		$format   = absint( $format );
+		$format   = $settings['format'] ?? Settings::FORMAT_WEBP;
+		$format   = Utils::is_php_compatible_avif() ? $format : Settings::FORMAT_WEBP;
 
 		$real_type = mime_content_type( $file_path );
 		if ( ! in_array( $real_type, self::ALLOWED_MIME_TYPES, true ) ) {
@@ -375,8 +463,7 @@ final class Media {
 
 		$size_before = filesize( $file_path );
 
-		if ( 1 === $format ) {
-
+		if ( Settings::FORMAT_WEBP === $format ) {
 			$format_name     = 'webp';
 			$new_path        = $file_path . '.' . $format_name;
 			$optimized_image = imagewebp( $gd_image, $new_path, 75 );
@@ -384,8 +471,7 @@ final class Media {
 			if ( $optimized_image ) {
 				$size_after = filesize( $new_path );
 			}
-		} elseif ( 2 === $format ) {
-
+		} elseif ( Settings::FORMAT_AVIF === $format ) {
 			$format_name     = 'avif';
 			$new_path        = $file_path . '.' . $format_name;
 			$optimized_image = imageavif( $gd_image, $new_path, 50 );

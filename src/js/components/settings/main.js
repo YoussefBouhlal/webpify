@@ -10,12 +10,13 @@ import Generale from './generale';
 import Bulk from './bulk';
 import Footer from './footer';
 
-const { optionName, ajaxUrl, nonce } = WEBPIFY_SETTINGS; // eslint-disable-line no-undef
+const { optionName, ajaxUrl, nonce, isPhpCompatibleAvif } = WEBPIFY_SETTINGS; // eslint-disable-line no-undef
 
 const Main = () => {
 	const [ format, setFormat ] = useState();
 	const [ display, setDisplay ] = useState();
-	const [ startBulk, setStartBulk ] = useState();
+	const [ startBulk, setStartBulk ] = useState( false );
+	const [ progressText, setProgressText ] = useState( '' );
 
 	const { createSuccessNotice, createErrorNotice, removeNotice } =
 		useDispatch( noticesStore );
@@ -29,11 +30,52 @@ const Main = () => {
 		} );
 	}, [] );
 
+	useEffect( () => {
+		const checkProgressBulkOptimization = () => {
+			if ( ! startBulk ) {
+				return;
+			}
+
+			const form = new FormData();
+			form.append( 'action', 'webpify_bulk_optimization_progress' );
+			form.append( '_wpnonce', nonce );
+
+			fetch( ajaxUrl, {
+				method: 'POST',
+				body: form,
+			} )
+				.then( ( r ) => r.json() )
+				.then( ( res ) => {
+					if ( res.success ) {
+						setProgressText( res.data.progress );
+
+						if ( ! res.data.running ) {
+							clearInterval( intervalId );
+							setStartBulk( false );
+						}
+					}
+				} )
+				.catch( () => {
+					clearInterval( intervalId );
+					setStartBulk( false );
+					setProgressText(
+						__(
+							'Unxpected error. Please reload the page and try again.',
+							'webpify'
+						)
+					);
+				} );
+		};
+		const intervalId = setInterval( checkProgressBulkOptimization, 5000 );
+		return () => clearInterval( intervalId );
+	}, [ startBulk ] );
+
 	/**
 	 * Do bulk optimization
 	 */
 	const startBulkOptimization = () => {
 		setStartBulk( true );
+		setProgressText( '' );
 
 		const form = new FormData();
 		form.append( 'action', 'webpify_bulk_optimization_start' );
@@ -45,10 +87,21 @@ const Main = () => {
 		} )
 			.then( ( r ) => r.json() )
 			.then( ( res ) => {
-				console.log( res );
+				if ( res.success ) {
+					setProgressText( res.data.progress );
+				} else {
+					setProgressText( res.data );
+					setStartBulk( false );
+				}
 			} )
-			.catch( ( err ) => {
-				console.log( err );
+			.catch( () => {
+				setStartBulk( false );
+				setProgressText(
+					__(
+						'Unxpected error. Please reload the page and try again.',
+						'webpify'
+					)
+				);
 			} );
 	};
 
@@ -57,6 +110,7 @@ const Main = () => {
 	 */
 	const stopBulkOptimization = () => {
 		setStartBulk( false );
+		setProgressText( '' );
 
 		const form = new FormData();
 		form.append( 'action', 'webpify_bulk_optimization_end' );
@@ -68,10 +122,17 @@ const Main = () => {
 		} )
 			.then( ( r ) => r.json() )
 			.then( ( res ) => {
-				console.log( res );
+				if ( ! res.success ) {
+					setProgressText( res.data );
+				}
 			} )
-			.catch( ( err ) => {
-				console.log( err );
+			.catch( () => {
+				setProgressText(
+					__(
+						'Unxpected error. Please reload the page and try again.',
+						'webpify'
+					)
+				);
 			} );
 	};
 
@@ -111,13 +172,18 @@ const Main = () => {
 		<>
 			<Notices />
 			<Panel>
-				<Generale format={ format } setFormat={ setFormat } />
+				<Generale
+					format={ format }
+					setFormat={ setFormat }
+					isPhpCompatibleAvif={ isPhpCompatibleAvif }
+				/>
 				<Bulk
 					display={ display }
 					setDisplay={ setDisplay }
 					stopBulkOptimization={ stopBulkOptimization }
 					startBulkOptimization={ startBulkOptimization }
 					startBulk={ startBulk }
+					progressText={ progressText }
 				/>
 				<Footer saveSettings={ saveSettings } />
 			</Panel>

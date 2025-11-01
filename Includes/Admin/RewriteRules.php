@@ -46,8 +46,8 @@ final class RewriteRules {
 				$old_value     = get_option( Settings::OPTION_NAME );
 				$display       = $webpify_settings['display'] ?? '';
 				$old_display   = $old_value['display'] ?? '';
-				$is_rewrite    = '3' === $display;
-				$was_rewrite   = '3' === $old_display;
+				$is_rewrite    = Settings::DISPLAY_REWRITE_RULES === $display;
+				$was_rewrite   = Settings::DISPLAY_REWRITE_RULES === $old_display;
 				$add_or_remove = false;
 
 				if ( $is_rewrite && ! $was_rewrite ) {

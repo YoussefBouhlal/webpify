@@ -20,7 +20,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Settings {
 
-	const OPTION_NAME = 'webpify_settings';
+	const OPTION_NAME           = 'webpify_settings';
+	const FORMAT_WEBP           = '1';
+	const FORMAT_AVIF           = '2';
+	const DISPLAY_OFF           = '1';
+	const DISPLAY_REWRITE_RULES = '2';
 
 	/**
 	 * Hook in methods.
@@ -48,9 +52,10 @@ final class Settings {
 				'webpify_settings',
 				'WEBPIFY_SETTINGS',
 				array(
-					'optionName' => self::OPTION_NAME,
-					'ajaxUrl'    => Utils::ajax_url(),
-					'nonce'      => wp_create_nonce( 'webpify_settings_bulk' ),
+					'optionName'          => self::OPTION_NAME,
+					'ajaxUrl'             => Utils::ajax_url(),
+					'nonce'               => wp_create_nonce( 'webpify_settings_bulk' ),
+					'isPhpCompatibleAvif' => Utils::is_php_compatible_avif(),
 				),
 			);
 		}
@@ -86,8 +91,8 @@ final class Settings {
 	 */
 	public static function register_settings() {
 		$default      = array(
-			'format'  => '1',
-			'display' => '1',
+			'format'  => self::FORMAT_WEBP,
+			'display' => self::DISPLAY_OFF,
 		);
 		$show_in_rest = array(
 			'schema' => array(

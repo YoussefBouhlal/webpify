@@ -92,4 +92,11 @@ final class Utils {
 	public static function build_url( $filename ) {
 		return self::plugin_url() . '/build/' . $filename;
 	}
+
+	/**
+	 * Is PHP compatible with AVIF?
+	 */
+	public static function is_php_compatible_avif() {
+		return is_php_version_compatible( '8.1.0' ) && function_exists( 'imageavif' );
+	}
 }
