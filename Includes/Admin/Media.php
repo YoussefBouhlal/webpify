@@ -34,14 +34,44 @@ final class Media {
 	 * Hook in methods.
 	 */
 	public static function hooks() {
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_scripts_styles' ) );
 		add_filter( 'wp_handle_upload_prefilter', array( __CLASS__, 'image_optimizition' ) );
 		add_action( 'delete_attachment', array( __CLASS__, 'before_attachment_is_deleted' ) );
+		add_filter( 'manage_media_columns', array( __CLASS__, 'add_custom_column' ) );
+		add_action( 'manage_media_custom_column', array( __CLASS__, 'add_custom_column_content' ), 10, 2 );
+		add_filter( 'attachment_fields_to_edit', array( __CLASS__, 'add_data_to_media_edit' ), PHP_INT_MAX, 2 );
+		add_action( 'attachment_submitbox_misc_actions', array( __CLASS__, 'add_data_to_media_submitbox' ), PHP_INT_MAX );
 		add_action( 'wp_ajax_webpify_bulk_optimization_start', array( __CLASS__, 'bulk_optimization_start' ) );
 		add_action( 'wp_ajax_webpify_bulk_optimization_end', array( __CLASS__, 'bulk_optimization_end' ) );
 		add_action( 'wp_ajax_webpify_bulk_optimization_progress', array( __CLASS__, 'bulk_optimization_progress' ) );
+		add_action( 'wp_ajax_webpify_single_optimization_start', array( __CLASS__, 'single_optimization_start' ) );
+		add_action( 'wp_ajax_webpify_single_optimization_undo', array( __CLASS__, 'single_optimization_undo' ) );
 		//phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
 		add_filter( 'cron_schedules', array( __CLASS__, 'crons_registrations' ) );
 		add_action( self::CRON_BULK_HOOK, array( __CLASS__, 'bulk_optimization_excute' ) );
+	}
+
+	/**
+	 * Enqueue scripts and styles.
+	 *
+	 * @param string $suffix Suffix.
+	 */
+	public static function enqueue_scripts_styles( $suffix ) {
+		global $post_type;
+
+		if ( 'upload.php' === $suffix || ( 'post.php' === $suffix && 'attachment' === $post_type ) ) {
+			$asset = include Utils::build_path( 'wpmedia.asset.php' );
+			wp_enqueue_style( 'webpify_wpmedia', Utils::build_url( 'wpmedia.css' ), array(), $asset['version'] );
+			wp_enqueue_script( 'webpify_wpmedia', Utils::build_url( 'wpmedia.js' ), $asset['dependencies'], $asset['version'], array( 'in_footer' => true ) );
+			wp_localize_script(
+				'webpify_wpmedia',
+				'WEBPIFY_WPMEDIA',
+				array(
+					'ajaxUrl' => Utils::ajax_url(),
+					'nonce'   => wp_create_nonce( 'webpify_wpmedia_single' ),
+				),
+			);
+		}
 	}
 
 	/**
@@ -98,6 +128,130 @@ final class Media {
 		if ( ! empty( $optimised_data ) ) {
 			self::delete_optimized_files( $optimised_data );
 		}
+	}
+
+	/**
+	 * Add custom column to media table
+	 *
+	 * @param array $columns columns.
+	 */
+	public static function add_custom_column( $columns ) {
+		$new_columns = array();
+
+		foreach ( $columns as $key => $label ) {
+			$new_columns[ $key ] = $label;
+
+			if ( 'title' === $key ) {
+				$new_columns['webpify'] = __( 'WebPify', 'webpify' );
+			}
+		}
+
+		return $new_columns;
+	}
+
+	/**
+	 * Add custom column content
+	 *
+	 * @param string $column_name column name.
+	 * @param int    $attachment_id attachment id.
+	 */
+	public static function add_custom_column_content( $column_name, $attachment_id ) {
+		if ( 'webpify' !== $column_name ) {
+			return;
+		}
+
+		$post_mime_type = get_post_mime_type( $attachment_id );
+		if ( ! in_array( $post_mime_type, self::ALLOWED_MIME_TYPES, true ) ) {
+			return;
+		}
+
+		$already_optimized = get_post_meta( $attachment_id, self::META_ALREADY_OPTIMIZED, true );
+		$data              = get_post_meta( $attachment_id, self::META_OPTIMIZED_DATA, true );
+
+		if ( '1' === $already_optimized && is_array( $data ) && ! empty( $data ) ) {
+			echo wp_kses_post( self::get_attachment_data( $data, $attachment_id ) );
+			return;
+		}
+
+		echo wp_kses_post( self::get_optimize_btn( $attachment_id ) );
+	}
+
+	/**
+	 * Add data to media edit
+	 *
+	 * @param array  $form_fields form fields.
+	 * @param object $post post object.
+	 */
+	public static function add_data_to_media_edit( $form_fields, $post ) {
+		global $pagenow;
+
+		if ( 'post.php' === $pagenow ) {
+			return $form_fields;
+		}
+
+		$attachment_id  = $post->ID;
+		$post_mime_type = get_post_mime_type( $attachment_id );
+		if ( ! in_array( $post_mime_type, self::ALLOWED_MIME_TYPES, true ) ) {
+			return $form_fields;
+		}
+
+		$already_optimized = get_post_meta( $attachment_id, self::META_ALREADY_OPTIMIZED, true );
+		$data              = get_post_meta( $attachment_id, self::META_OPTIMIZED_DATA, true );
+
+		if ( '1' === $already_optimized && is_array( $data ) && ! empty( $data ) ) {
+			$html = wp_kses_post( self::get_attachment_data( $data, $attachment_id ) );
+		} else {
+			$html = wp_kses_post( self::get_optimize_btn( $attachment_id ) );
+		}
+
+		$form_fields['webpify'] = array(
+			'label'         => 'WebPify',
+			'input'         => 'html',
+			'html'          => $html,
+			'show_in_edit'  => true,
+			'show_in_modal' => true,
+		);
+
+		return $form_fields;
+	}
+
+	/**
+	 * Add data to media submitbox
+	 */
+	public static function add_data_to_media_submitbox() {
+		global $post;
+
+		$attachment_id  = $post->ID;
+		$post_mime_type = get_post_mime_type( $attachment_id );
+		if ( ! in_array( $post_mime_type, self::ALLOWED_MIME_TYPES, true ) ) {
+			return;
+		}
+
+		$already_optimized = get_post_meta( $attachment_id, self::META_ALREADY_OPTIMIZED, true );
+		$data              = get_post_meta( $attachment_id, self::META_OPTIMIZED_DATA, true );
+
+		if ( '1' === $already_optimized && is_array( $data ) && ! empty( $data ) ) {
+			$html = wp_kses_post( self::get_attachment_data( $data, $attachment_id ) );
+		} else {
+			$html = wp_kses_post( self::get_optimize_btn( $attachment_id ) );
+		}
+
+		?>
+		<div class="misc-pub-section misc-pub-dimensions">
+			<table>
+				<tr>
+					<td>
+						<div><strong><?php esc_html_e( 'WebPify', 'webpify' ); ?></strong></div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<?php echo wp_kses_post( $html ); ?>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<?php
 	}
 
 	/**
@@ -182,6 +336,58 @@ final class Media {
 	}
 
 	/**
+	 * Single optimization
+	 */
+	public static function single_optimization_start() {
+
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) );
+		if ( ! wp_verify_nonce( $nonce, 'webpify_wpmedia_single' ) ) {
+			wp_send_json_error( __( 'Refresh the page and try again.', 'webpify' ) );
+		}
+
+		$attachment_id = isset( $_POST['attachment_id'] ) ? sanitize_text_field( wp_unslash( $_POST['attachment_id'] ) ) : false;
+		if ( ! $attachment_id ) {
+			wp_send_json_error( __( 'No attachment id.', 'webpify' ) );
+		}
+
+		$post_mime_type = get_post_mime_type( $attachment_id );
+		if ( ! in_array( $post_mime_type, self::ALLOWED_MIME_TYPES, true ) ) {
+			wp_send_json_error( __( 'Mime type not supported.', 'webpify' ) );
+		}
+
+		$sizes     = self::get_media_files( $attachment_id );
+		$new_sizes = self::set_media_meta_data( $sizes, $attachment_id );
+
+		$html = self::get_attachment_data( $new_sizes, $attachment_id );
+		wp_send_json_success( $html );
+	}
+
+	/**
+	 * Single optimization undo
+	 */
+	public static function single_optimization_undo() {
+
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ?? '' ) );
+		if ( ! wp_verify_nonce( $nonce, 'webpify_wpmedia_single' ) ) {
+			wp_send_json_error( __( 'Refresh the page and try again.', 'webpify' ) );
+		}
+
+		$attachment_id = isset( $_POST['attachment_id'] ) ? sanitize_text_field( wp_unslash( $_POST['attachment_id'] ) ) : false;
+		if ( ! $attachment_id ) {
+			wp_send_json_error( __( 'No attachment id.', 'webpify' ) );
+		}
+
+		$optimised_data = get_post_meta( $attachment_id, self::META_OPTIMIZED_DATA, true );
+		if ( ! empty( $optimised_data ) ) {
+			self::delete_optimized_files( $optimised_data );
+			delete_post_meta( $attachment_id, self::META_ALREADY_OPTIMIZED );
+			delete_post_meta( $attachment_id, self::META_OPTIMIZED_DATA );
+		}
+		$html = self::get_optimize_btn( $attachment_id );
+		wp_send_json_success( $html );
+	}
+
+	/**
 	 * Register cron jobs
 	 *
 	 * @param array $schedules Schedules.
@@ -220,26 +426,8 @@ final class Media {
 				exit;
 			}
 
-			$sizes     = self::get_media_files( $id );
-			$new_sizes = array();
-
-			foreach ( $sizes as $key => $size ) {
-				$result = self::optimize_local_file( $size );
-
-				if ( $result ) {
-					$new_sizes[ $key ] = $result;
-				}
-			}
-
-			if ( ! empty( $new_sizes ) ) {
-				update_post_meta( $id, self::META_ALREADY_OPTIMIZED, '1' );
-				update_post_meta( $id, self::META_OPTIMIZED_DATA, $new_sizes );
-				delete_post_meta( $id, self::META_OPTIMIZED_ERROR );
-			} else {
-				delete_post_meta( $id, self::META_ALREADY_OPTIMIZED );
-				delete_post_meta( $id, self::META_OPTIMIZED_DATA );
-				update_post_meta( $id, self::META_OPTIMIZED_ERROR, '1' );
-			}
+			$sizes = self::get_media_files( $id );
+			self::set_media_meta_data( $sizes, $id );
 
 			++$current;
 			update_option( self::OPTION_BULK_CURRENT, $current, false );
@@ -392,6 +580,68 @@ final class Media {
 	}
 
 	/**
+	 * Get displayed attachment data
+	 *
+	 * @param array $data data.
+	 * @param int   $attachment_id attachment id.
+	 */
+	private static function get_attachment_data( $data, $attachment_id ) {
+		$full_image_data = $data['full'] ?? array();
+
+		if ( ! empty( $full_image_data ) ) {
+
+			$original_size  = round( $full_image_data['original_size'] / 1024, 2 );
+			$optimized_size = round( $full_image_data['optimized_size'] / 1024, 2 );
+			$percent        = round( $full_image_data['percent'], 2 );
+			$format         = $full_image_data['format'] ?? '';
+
+			ob_start();
+			?>
+				<div class="webpify-data">
+					<div class="webpify-data__original">
+						<div class="webpify-data__original__title"><?php esc_html_e( 'Original', 'webpify' ); ?></div>
+						<div class="webpify-data__original__value"><?php echo esc_html( $original_size . 'KB' ); ?></div>
+					</div>
+					<div class="webpify-data__optimized">
+						<div class="webpify-data__optimized__size">
+							<div class="webpify-data__optimized__size__title"><?php echo esc_html( ucfirst( $format ) ); ?></div>
+							<div class="webpify-data__optimized__size__value"><?php echo esc_html( $optimized_size . 'KB' ); ?></div>
+						</div>
+						<div class="webpify-data__optimized__percent"><?php echo esc_html( $percent . '%' ); ?></div>
+					</div>
+				</div>
+				<div>
+					<button type="button" class="button button-sacondary webpify-undo-single-optimization-btn" data-attachment-id="<?php echo esc_attr( $attachment_id ); ?>">
+						<?php esc_html_e( 'Undo optimization', 'webpify' ); ?>
+						<div class="spinner"></div>
+					</button>
+					<div class="webify-undo-single-optimization-msg"></div>
+				</div>
+			<?php
+			return ob_get_clean();
+		}
+
+		return '';
+	}
+
+	/**
+	 * Get optimize button
+	 *
+	 * @param int $attachment_id attachment id.
+	 */
+	private static function get_optimize_btn( $attachment_id ) {
+		ob_start();
+		?>
+			<button type="button" class="button button-sacondary webpify-single-optimization-btn" data-attachment-id="<?php echo esc_attr( $attachment_id ); ?>">
+				<?php echo esc_html__( 'Optimize', 'webpify' ); ?>
+				<div class="spinner"></div>
+			</button>
+			<div class="webpify-single-optimization-msg"></div>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
 	 * Get media files
 	 *
 	 * @param int $media_id media id.
@@ -433,6 +683,36 @@ final class Media {
 		}
 
 		return $all_sizes;
+	}
+
+	/**
+	 * Set media meta data
+	 *
+	 * @param array $sizes sizes.
+	 * @param int   $id attachment id.
+	 */
+	private static function set_media_meta_data( $sizes, $id ) {
+		$new_sizes = array();
+
+		foreach ( $sizes as $key => $size ) {
+			$result = self::optimize_local_file( $size );
+
+			if ( $result ) {
+				$new_sizes[ $key ] = $result;
+			}
+		}
+
+		if ( ! empty( $new_sizes ) ) {
+			update_post_meta( $id, self::META_ALREADY_OPTIMIZED, '1' );
+			update_post_meta( $id, self::META_OPTIMIZED_DATA, $new_sizes );
+			delete_post_meta( $id, self::META_OPTIMIZED_ERROR );
+		} else {
+			delete_post_meta( $id, self::META_ALREADY_OPTIMIZED );
+			delete_post_meta( $id, self::META_OPTIMIZED_DATA );
+			update_post_meta( $id, self::META_OPTIMIZED_ERROR, '1' );
+		}
+
+		return $new_sizes;
 	}
 
 	/**
@@ -486,13 +766,13 @@ final class Media {
 		}
 
 		$deference = $size_before - $size_after;
-		$percent   = $deference / $size_before * 100;
+		$percent   = round( $deference / $size_before * 100, 2 );
 
 		return array(
 			'success'        => 1,
 			'original_size'  => $size_before,
 			'optimized_size' => $size_after,
-			'percent'        => round( $percent, 2 ),
+			'percent'        => $percent,
 			'path'           => $new_path,
 			'format'         => $format_name,
 		);

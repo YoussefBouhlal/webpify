@@ -9,15 +9,17 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-10-26T13:10:46+00:00\n"
+"POT-Creation-Date: 2025-11-01T15:57:45+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: webpify\n"
 
 #. Plugin Name of the plugin
 #: webpify.php
-#: Includes/Admin/Settings.php:62
-#: Includes/Admin/Settings.php:63
+#: Includes/Admin/Media.php:145
+#: Includes/Admin/Media.php:244
+#: Includes/Admin/Settings.php:69
+#: Includes/Admin/Settings.php:70
 msgid "WebPify"
 msgstr ""
 
@@ -41,11 +43,58 @@ msgstr ""
 msgid "pro.youssef.bouhlal@gmail.com"
 msgstr ""
 
+#: Includes/Admin/Media.php:264
+#: Includes/Admin/Media.php:294
+#: Includes/Admin/Media.php:304
+#: Includes/Admin/Media.php:311
+#: Includes/Admin/Media.php:321
+#: Includes/Admin/Media.php:345
+#: Includes/Admin/Media.php:372
+msgid "Refresh the page and try again."
+msgstr ""
+
+#: Includes/Admin/Media.php:269
+msgid "No images to optimize."
+msgstr ""
+
+#: Includes/Admin/Media.php:274
+msgid "Bulk optimization is already running."
+msgstr ""
+
+#: Includes/Admin/Media.php:308
+msgid "Bulk optimization stopped."
+msgstr ""
+
+#: Includes/Admin/Media.php:350
+#: Includes/Admin/Media.php:377
+msgid "No attachment id."
+msgstr ""
+
+#: Includes/Admin/Media.php:355
+msgid "Mime type not supported."
+msgstr ""
+
+#: Includes/Admin/Media.php:399
+msgid "Every minute"
+msgstr ""
+
+#: Includes/Admin/Media.php:602
+msgid "Original"
+msgstr ""
+
+#: Includes/Admin/Media.php:615
+msgid "Undo optimization"
+msgstr ""
+
+#: Includes/Admin/Media.php:636
+msgid "Optimize"
+msgstr ""
+
 #: Includes/Admin/RewriteRules.php:72
 msgid "Your server is not supported."
 msgstr ""
 
-#: Includes/Admin/Settings.php:76
+#: Includes/Admin/Settings.php:83
 msgid "WebPify Settings"
 msgstr ""
 
@@ -89,47 +138,52 @@ msgid "Format"
 msgstr ""
 
 #: build/settings.js:1
-#: src/js/components/settings/generale.js:14
+#: src/js/components/settings/generale.js:16
 msgid "WebP"
 msgstr ""
 
 #: build/settings.js:1
-#: src/js/components/settings/generale.js:15
+#: src/js/components/settings/generale.js:18
 msgid "AVIF"
 msgstr ""
 
 #: build/settings.js:1
-#: src/js/components/settings/bulk.js:11
+#: src/js/components/settings/generale.js:20
+msgid "(PHP 8.1 or higher)"
+msgstr ""
+
+#: build/settings.js:1
+#: src/js/components/settings/bulk.js:19
 msgid "Bulk settings"
 msgstr ""
 
 #: build/settings.js:1
-#: src/js/components/settings/bulk.js:14
+#: src/js/components/settings/bulk.js:22
 msgid "Display images with new format on the site"
 msgstr ""
 
 #: build/settings.js:1
-#: src/js/components/settings/bulk.js:21
+#: src/js/components/settings/bulk.js:29
 msgid "Deactivate"
 msgstr ""
 
 #: build/settings.js:1
-#: src/js/components/settings/bulk.js:25
-msgid "Use <picture> tags"
-msgstr ""
-
-#: build/settings.js:1
-#: src/js/components/settings/bulk.js:29
+#: src/js/components/settings/bulk.js:33
 msgid "Use rewrite rules"
 msgstr ""
 
 #: build/settings.js:1
-#: src/js/components/settings/bulk.js:39
+#: src/js/components/settings/bulk.js:43
 msgid "Bulk optimization"
 msgstr ""
 
 #: build/settings.js:1
-#: src/js/components/settings/bulk.js:46
+#: src/js/components/settings/bulk.js:53
+msgid "Stop"
+msgstr ""
+
+#: build/settings.js:1
+#: src/js/components/settings/bulk.js:65
 msgid "Start"
 msgstr ""
 
@@ -140,5 +194,12 @@ msgstr ""
 
 #: build/settings.js:1
 #: src/js/components/settings/main.js:62
+#: src/js/components/settings/main.js:100
+#: src/js/components/settings/main.js:131
+msgid "Unxpected error. Please reload the page and try again."
+msgstr ""
+
+#: build/settings.js:1
+#: src/js/components/settings/main.js:164
 msgid "Settings saved"
 msgstr ""

@@ -1,0 +1,79 @@
+.webpify-data {
+	margin: 10px 0;
+
+	&__original {
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+
+		&__title {
+			font-size: 12px;
+			width: 50px;
+		}
+
+		&__value {
+			font-size: 12px;
+			font-weight: 700;
+			width: 60px;
+		}
+	}
+
+	&__optimized {
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+
+		&__size {
+			display: flex;
+			align-items: center;
+			justify-content: flex-start;
+			margin-right: 5px;
+
+			&__title {
+				font-size: 12px;
+				width: 50px;
+			}
+
+			&__value {
+				font-size: 12px;
+				font-weight: 700;
+				width: 60px;
+			}
+		}
+
+		&__percent {
+			font-size: 12px;
+			font-weight: 700;
+			color: #fff;
+			background: #56a656;
+			border-radius: 3px;
+			padding: 0 5px;
+		}
+	}
+}
+
+.webpify-single-optimization-btn,
+.webpify-undo-single-optimization-btn {
+
+	.spinner {
+		display: none;
+	}
+
+	&.show-spinner {
+
+		.spinner {
+			display: inline-block;
+			visibility: visible;
+		}
+	}
+}
+
+.webify-undo-single-optimization-msg,
+.webpify-single-optimization-msg {
+	display: none;
+	margin-left: 10px;
+
+	&.show {
+		display: block;
+	}
+}
