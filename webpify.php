@@ -8,7 +8,7 @@
  * Requires at least: 6.8
  * Requires PHP:      7.4
  * Author:            Youssef Bouhlal
- * Author URI:        pro.youssef.bouhlal@gmail.com
+ * Author URI:        https://profiles.wordpress.org/youssefbouhlal/
  * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       webpify
