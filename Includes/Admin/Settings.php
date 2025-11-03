@@ -33,6 +33,7 @@ final class Settings {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_styles_scripts' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'add_options_pages' ) );
 		add_action( 'rest_api_init', array( __CLASS__, 'register_settings' ) );
+		add_filter( 'plugin_action_links_webpify/webpify.php', array( __CLASS__, 'add_settings_link' ) );
 	}
 
 	/**
@@ -117,5 +118,18 @@ final class Settings {
 				'show_in_rest' => $show_in_rest,
 			),
 		);
+	}
+
+	/**
+	 * Add settings link to plugin action links.
+	 *
+	 * @param array $links Array of plugin action links.
+	 */
+	public static function add_settings_link( $links ) {
+
+		$settings_link = '<a href="' . admin_url( 'options-general.php?page=webpify' ) . '">' . esc_html__( 'Settings', 'webpify' ) . '</a>';
+		array_unshift( $links, $settings_link );
+
+		return $links;
 	}
 }

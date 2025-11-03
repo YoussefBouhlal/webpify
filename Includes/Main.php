@@ -61,9 +61,6 @@ final class Main {
 
 		Admin::hooks();
 		Front::hooks();
-
-		// Set up localisation.
-		self::load_plugin_textdomain();
 	}
 
 	/**
@@ -123,12 +120,5 @@ final class Main {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Load Localisation files.
-	 */
-	private static function load_plugin_textdomain() {
-		load_plugin_textdomain( 'webpify', false, Utils::plugin_path() . '/languages' );
 	}
 }
