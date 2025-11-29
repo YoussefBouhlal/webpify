@@ -123,8 +123,8 @@ final class Settings {
 
 	/**
 	 * Sanitize webpify settings.
-	 * 
-	 * @return array
+	 *
+	 * @param array $value Settings.
 	 */
 	public static function sanitize_settings( $value ) {
 		return array(
