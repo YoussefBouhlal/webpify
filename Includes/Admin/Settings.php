@@ -113,10 +113,23 @@ final class Settings {
 			'options',
 			'webpify_settings',
 			array(
-				'type'         => 'object',
-				'default'      => $default,
-				'show_in_rest' => $show_in_rest,
+				'type'              => 'object',
+				'default'           => $default,
+				'show_in_rest'      => $show_in_rest,
+				'sanitize_callback' => array( __CLASS__, 'sanitize_settings' ),
 			),
+		);
+	}
+
+	/**
+	 * Sanitize webpify settings.
+	 * 
+	 * @return array
+	 */
+	public static function sanitize_settings( $value ) {
+		return array(
+			'format'  => sanitize_text_field( wp_unslash( $value['format'] ?? '' ) ),
+			'display' => sanitize_text_field( wp_unslash( $value['display'] ?? '' ) ),
 		);
 	}
 
