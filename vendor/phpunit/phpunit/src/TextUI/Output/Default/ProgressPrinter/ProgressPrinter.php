@@ -90,6 +90,13 @@ final class ProgressPrinter
         }
     }
 
+    public function testSuiteSkipped(int $countTests): void
+    {
+        for ($i = 0; $i < $countTests; $i++) {
+            $this->testSkipped();
+        }
+    }
+
     public function testMarkedIncomplete(): void
     {
         $this->updateTestStatus(TestStatus::incomplete());
@@ -186,6 +193,11 @@ final class ProgressPrinter
     public function testTriggeredPhpunitDeprecation(): void
     {
         $this->updateTestStatus(TestStatus::deprecation());
+    }
+
+    public function testTriggeredPhpunitNotice(): void
+    {
+        $this->updateTestStatus(TestStatus::notice());
     }
 
     public function testConsideredRisky(): void
@@ -311,11 +323,13 @@ final class ProgressPrinter
             new TestPreparedSubscriber($this),
             new TestRunnerExecutionStartedSubscriber($this),
             new TestSkippedSubscriber($this),
+            new TestSuiteSkippedSubscriber($this),
             new TestTriggeredDeprecationSubscriber($this),
             new TestTriggeredNoticeSubscriber($this),
             new TestTriggeredPhpDeprecationSubscriber($this),
             new TestTriggeredPhpNoticeSubscriber($this),
             new TestTriggeredPhpunitDeprecationSubscriber($this),
+            new TestTriggeredPhpunitNoticeSubscriber($this),
             new TestTriggeredPhpunitWarningSubscriber($this),
             new TestTriggeredPhpWarningSubscriber($this),
             new TestTriggeredWarningSubscriber($this),
