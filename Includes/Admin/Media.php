@@ -9,6 +9,7 @@
 
 namespace Webpify\Admin;
 
+use Webpify\Helpers\ImageOptimizer;
 use Webpify\Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -35,7 +36,7 @@ final class Media {
 	 */
 	public static function hooks() {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_scripts_styles' ) );
-		add_filter( 'wp_handle_upload_prefilter', array( __CLASS__, 'image_optimizition' ) );
+		add_filter( 'wp_handle_upload_prefilter', array( __CLASS__, 'image_optimization' ) );
 		add_action( 'delete_attachment', array( __CLASS__, 'before_attachment_is_deleted' ) );
 		add_filter( 'manage_media_columns', array( __CLASS__, 'add_custom_column' ) );
 		add_action( 'manage_media_custom_column', array( __CLASS__, 'add_custom_column_content' ), 10, 2 );
@@ -79,42 +80,30 @@ final class Media {
 	 *
 	 * @param array $file file data.
 	 */
-	public static function image_optimizition( $file ) {
-
-		$settings = get_option( Settings::OPTION_NAME );
-		$format   = $settings['format'] ?? Settings::FORMAT_WEBP;
-		$format   = Utils::is_php_compatible_avif() ? $format : Settings::FORMAT_WEBP;
-
-		if ( ! self::validate_image( $file ) ) {
+	public static function image_optimization( $file ) {
+		$file_path = $file['tmp_name'] ?? '';
+		if ( '' === $file_path ) {
 			return $file;
 		}
 
-		$file_tmp_name = $file['tmp_name'] ?? '';
-
-		$gd_image = self::get_gd_image( $file_tmp_name );
-		if ( empty( $gd_image ) ) {
-			return false;
-		}
-
-		if ( Settings::FORMAT_WEBP === $format ) {
-			$optimized_image = imagewebp( $gd_image, $file_tmp_name, 75 );
-			$optimized_type  = 'image/webp';
-		} elseif ( Settings::FORMAT_AVIF === $format ) {
-			$optimized_image = imageavif( $gd_image, $file_tmp_name, 50 );
-			$optimized_type  = 'image/avif';
-		}
-		imagedestroy( $gd_image );
-
-		if ( empty( $optimized_image ) ) {
+		$result = ( new ImageOptimizer() )->optimize( $file_path, $file_path, self::get_optimization_format() );
+		if ( ! $result ) {
 			return $file;
 		}
 
-		if ( $optimized_image ) {
-			$file['size'] = filesize( $file_tmp_name );
-			$file['type'] = $optimized_type;
-		}
+		$file['size'] = $result['optimized_size'];
+		$file['type'] = $result['mime_type'];
 
 		return $file;
+	}
+
+	/**
+	 * Backward-compatible alias for the original misspelled method.
+	 *
+	 * @param array $file File data.
+	 */
+	public static function image_optimizition( $file ) {
+		return self::image_optimization( $file );
 	}
 
 	/**
@@ -264,6 +253,10 @@ final class Media {
 			wp_send_json_error( __( 'Refresh the page and try again.', 'webpify' ) );
 		}
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'You are not allowed to manage WebPify settings.', 'webpify' ), 403 );
+		}
+
 		$media_ids = self::get_unoptimized_media_ids();
 		if ( empty( $media_ids ) ) {
 			wp_send_json_error( __( 'No images to optimize.', 'webpify' ) );
@@ -275,7 +268,10 @@ final class Media {
 		}
 
 		if ( ! wp_next_scheduled( self::CRON_BULK_HOOK ) ) {
-			wp_schedule_event( time(), self::CRON_BULK_RECURRENCE, self::CRON_BULK_HOOK );
+			$scheduled = wp_schedule_event( time(), self::CRON_BULK_RECURRENCE, self::CRON_BULK_HOOK, array(), true );
+			if ( is_wp_error( $scheduled ) || ! $scheduled ) {
+				wp_send_json_error( __( 'Could not schedule bulk optimization.', 'webpify' ) );
+			}
 
 			$total   = count( $media_ids );
 			$current = 0;
@@ -304,6 +300,10 @@ final class Media {
 			wp_send_json_error( __( 'Refresh the page and try again.', 'webpify' ) );
 		}
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'You are not allowed to manage WebPify settings.', 'webpify' ), 403 );
+		}
+
 		if ( self::clear_bulk_optimization() ) {
 			wp_send_json_success( __( 'Bulk optimization stopped.', 'webpify' ) );
 		}
@@ -321,16 +321,16 @@ final class Media {
 			wp_send_json_error( __( 'Refresh the page and try again.', 'webpify' ) );
 		}
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'You are not allowed to manage WebPify settings.', 'webpify' ), 403 );
+		}
+
 		$status     = get_option( self::OPTION_BULK_STATUS, '' );
 		$total      = (int) get_option( self::OPTION_BULK_TOTAL, 0 );
 		$current    = (int) get_option( self::OPTION_BULK_CURRENT, 0 );
 		$is_running = $status === 'running' ? true : false;
 
-		$data = array(
-			'running'  => $is_running,
-			'progress' => $current . '/' . $total,
-			'percent'  => $total ? round( abs( ( $current / $total ) ) * 100 ) . '%' : '0%',
-		);
+		$data = self::get_progress_data( $current, $total, $is_running );
 
 		wp_send_json_success( $data );
 	}
@@ -345,9 +345,13 @@ final class Media {
 			wp_send_json_error( __( 'Refresh the page and try again.', 'webpify' ) );
 		}
 
-		$attachment_id = isset( $_POST['attachment_id'] ) ? sanitize_text_field( wp_unslash( $_POST['attachment_id'] ) ) : false;
+		$attachment_id = isset( $_POST['attachment_id'] ) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
 		if ( ! $attachment_id ) {
 			wp_send_json_error( __( 'No attachment id.', 'webpify' ) );
+		}
+
+		if ( ! current_user_can( 'upload_files' ) || ! current_user_can( 'edit_post', $attachment_id ) ) {
+			wp_send_json_error( __( 'You are not allowed to optimize this attachment.', 'webpify' ), 403 );
 		}
 
 		$post_mime_type = get_post_mime_type( $attachment_id );
@@ -372,9 +376,13 @@ final class Media {
 			wp_send_json_error( __( 'Refresh the page and try again.', 'webpify' ) );
 		}
 
-		$attachment_id = isset( $_POST['attachment_id'] ) ? sanitize_text_field( wp_unslash( $_POST['attachment_id'] ) ) : false;
+		$attachment_id = isset( $_POST['attachment_id'] ) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
 		if ( ! $attachment_id ) {
 			wp_send_json_error( __( 'No attachment id.', 'webpify' ) );
+		}
+
+		if ( ! current_user_can( 'upload_files' ) || ! current_user_can( 'edit_post', $attachment_id ) ) {
+			wp_send_json_error( __( 'You are not allowed to optimize this attachment.', 'webpify' ), 403 );
 		}
 
 		$optimised_data = get_post_meta( $attachment_id, self::META_OPTIMIZED_DATA, true );
@@ -412,18 +420,20 @@ final class Media {
 
 		if ( empty( $media_ids ) ) {
 			self::end_cron_job();
+			return;
 		}
 
 		$status = get_option( self::OPTION_BULK_STATUS, 'finish' );
 		if ( $status !== 'running' ) {
 			self::end_cron_job();
+			return;
 		}
 
 		$current = (int) get_option( self::OPTION_BULK_CURRENT, 0 );
 
 		foreach ( $media_ids as $id ) {
 			if ( $time_start + 55 < microtime( true ) ) {
-				exit;
+				return;
 			}
 
 			$sizes = self::get_media_files( $id );
@@ -434,71 +444,6 @@ final class Media {
 		}
 
 		self::end_cron_job();
-	}
-
-	/**
-	 * Check if the file is an image
-	 *
-	 * @param array $file file data.
-	 */
-	private static function validate_image( $file ) {
-
-		$file_tmp_name = $file['tmp_name'] ?? '';
-		if ( empty( $file_tmp_name ) ) {
-			return false;
-		}
-
-		$file_size = wp_getimagesize( $file_tmp_name );
-		if ( ! $file_size ) {
-			return false;
-		}
-
-		$file_mime_type = wp_get_image_mime( $file_tmp_name );
-		if ( ! $file_mime_type ) {
-			return false;
-		}
-
-		if ( false === in_array( $file_mime_type, self::ALLOWED_MIME_TYPES, true ) ) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Get gd image
-	 *
-	 * @param string $file_path file path.
-	 */
-	private static function get_gd_image( $file_path ) {
-
-		$file_mime_type = wp_get_image_mime( $file_path );
-
-		if ( 'image/jpeg' === $file_mime_type ) {
-			$gd_image = imagecreatefromjpeg( $file_path );
-		} elseif ( 'image/png' === $file_mime_type ) {
-			$gd_image = imagecreatefrompng( $file_path );
-		}
-
-		if ( empty( $gd_image ) ) {
-			return false;
-		}
-
-		if ( ! imageistruecolor( $gd_image ) ) {
-			$truecolor = imagecreatetruecolor( imagesx( $gd_image ), imagesy( $gd_image ) );
-
-			if ( 'image/png' === $file_mime_type ) {
-				imagealphablending( $truecolor, false );
-				imagesavealpha( $truecolor, true );
-				$transparent = imagecolorallocatealpha( $truecolor, 0, 0, 0, 127 );
-				imagefilledrectangle( $truecolor, 0, 0, imagesx( $gd_image ), imagesy( $gd_image ), $transparent );
-			}
-
-			imagecopy( $truecolor, $gd_image, 0, 0, 0, 0, imagesx( $gd_image ), imagesy( $gd_image ) );
-			$gd_image = $truecolor;
-		}
-
-		return $gd_image;
 	}
 
 	/**
@@ -521,7 +466,6 @@ final class Media {
 	 */
 	private static function end_cron_job() {
 		self::clear_bulk_optimization();
-		exit;
 	}
 
 	/**
@@ -532,10 +476,28 @@ final class Media {
 
 		if ( wp_next_scheduled( self::CRON_BULK_HOOK ) ) {
 			wp_clear_scheduled_hook( self::CRON_BULK_HOOK );
-			return true;
 		}
 
-		return false;
+		return true;
+	}
+
+	/**
+	 * Build normalized bulk progress data.
+	 *
+	 * @param int  $current    Current number of processed images.
+	 * @param int  $total      Total number of images.
+	 * @param bool $is_running Whether optimization is still running.
+	 */
+	public static function get_progress_data( $current, $total, $is_running ) {
+		$total   = max( 0, (int) $total );
+		$current = min( max( 0, (int) $current ), $total );
+		$percent = $total > 0 ? round( $current / $total * 100 ) : 0;
+
+		return array(
+			'running'  => (bool) $is_running,
+			'progress' => $current . '/' . $total,
+			'percent'  => $percent . '%',
+		);
 	}
 
 	/**
@@ -727,54 +689,23 @@ final class Media {
 			return false;
 		}
 
+		$format   = self::get_optimization_format();
+		$new_path = $file_path . '.' . $format;
+
+		return ( new ImageOptimizer() )->optimize( $file_path, $new_path, $format );
+	}
+
+	/**
+	 * Get the validated destination format.
+	 */
+	private static function get_optimization_format() {
 		$settings = get_option( Settings::OPTION_NAME );
 		$format   = $settings['format'] ?? Settings::FORMAT_WEBP;
-		$format   = Utils::is_php_compatible_avif() ? $format : Settings::FORMAT_WEBP;
 
-		$real_type = mime_content_type( $file_path );
-		if ( ! in_array( $real_type, self::ALLOWED_MIME_TYPES, true ) ) {
-			return false;
+		if ( Settings::FORMAT_AVIF === $format && Utils::is_php_compatible_avif() ) {
+			return ImageOptimizer::FORMAT_AVIF;
 		}
 
-		$gd_image = self::get_gd_image( $file_path );
-		if ( empty( $gd_image ) ) {
-			return false;
-		}
-
-		$size_before = filesize( $file_path );
-
-		if ( Settings::FORMAT_WEBP === $format ) {
-			$format_name     = 'webp';
-			$new_path        = $file_path . '.' . $format_name;
-			$optimized_image = imagewebp( $gd_image, $new_path, 75 );
-
-			if ( $optimized_image ) {
-				$size_after = filesize( $new_path );
-			}
-		} elseif ( Settings::FORMAT_AVIF === $format ) {
-			$format_name     = 'avif';
-			$new_path        = $file_path . '.' . $format_name;
-			$optimized_image = imageavif( $gd_image, $new_path, 50 );
-
-			if ( $optimized_image ) {
-				$size_after = filesize( $new_path );
-			}
-		}
-
-		if ( empty( $size_after ) ) {
-			return false;
-		}
-
-		$deference = $size_before - $size_after;
-		$percent   = round( $deference / $size_before * 100, 2 );
-
-		return array(
-			'success'        => 1,
-			'original_size'  => $size_before,
-			'optimized_size' => $size_after,
-			'percent'        => $percent,
-			'path'           => $new_path,
-			'format'         => $format_name,
-		);
+		return ImageOptimizer::FORMAT_WEBP;
 	}
 }

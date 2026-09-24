@@ -44,7 +44,7 @@ if ( ! is_readable( $webpify_autoloader ) ) {
 		function () {
 			?>
 			<div class="notice notice-error">
-				<p><?php echo esc_html_e( 'WebPify: Composer autoload file not found. Please run `composer install`.', 'webpify' ); ?></p>
+				<p><?php esc_html_e( 'WebPify: Composer autoload file not found. Please run `composer install`.', 'webpify' ); ?></p>
 			</div>
 			<?php
 		}

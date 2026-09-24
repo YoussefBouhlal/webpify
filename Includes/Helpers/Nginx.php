@@ -32,9 +32,19 @@ class Nginx extends RewriteRulesAbstract {
 	 * Get unfiltered new contents to write into the file.
 	 */
 	protected function get_raw_new_contents() {
-		$home_root = wp_parse_url( home_url( '/' ) );
-		$home_root = $home_root['path'];
-		$tag_name  = $this->tag_name;
+		$home_url  = wp_parse_url( home_url( '/' ) );
+		$home_root = $home_url['path'] ?? '/';
+
+		return $this->build_rules( $home_root );
+	}
+
+	/**
+	 * Build Nginx rewrite rules.
+	 *
+	 * @param string $home_root Site URL path.
+	 */
+	protected function build_rules( $home_root ) {
+		$tag_name = $this->tag_name;
 
 		$content  = "# BEGIN $tag_name" . PHP_EOL;
 		$content .= "location ~* ^($home_root.+)\\.(jpg|jpeg|jpe|png)$ {" . PHP_EOL;
@@ -59,7 +69,7 @@ class Nginx extends RewriteRulesAbstract {
 		$content .= "\tif (\$imwebp = AB) {" . PHP_EOL;
 		$content .= "\t\trewrite ^(.*) \$1.webp break;" . PHP_EOL;
 		$content .= "\t}" . PHP_EOL;
-		$content .= '}';
+		$content .= '}' . PHP_EOL;
 		$content .= "# END $tag_name " . PHP_EOL;
 
 		return trim( $content );

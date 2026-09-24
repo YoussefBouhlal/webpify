@@ -127,9 +127,28 @@ final class Settings {
 	 * @param array $value Settings.
 	 */
 	public static function sanitize_settings( $value ) {
+		if ( ! is_array( $value ) ) {
+			$value = array();
+		}
+
+		$format  = sanitize_text_field( wp_unslash( $value['format'] ?? '' ) );
+		$display = sanitize_text_field( wp_unslash( $value['display'] ?? '' ) );
+
+		if ( ! in_array( $format, array( self::FORMAT_WEBP, self::FORMAT_AVIF ), true ) ) {
+			$format = self::FORMAT_WEBP;
+		}
+
+		if ( self::FORMAT_AVIF === $format && ! Utils::is_php_compatible_avif() ) {
+			$format = self::FORMAT_WEBP;
+		}
+
+		if ( ! in_array( $display, array( self::DISPLAY_OFF, self::DISPLAY_REWRITE_RULES ), true ) ) {
+			$display = self::DISPLAY_OFF;
+		}
+
 		return array(
-			'format'  => sanitize_text_field( wp_unslash( $value['format'] ?? '' ) ),
-			'display' => sanitize_text_field( wp_unslash( $value['display'] ?? '' ) ),
+			'format'  => $format,
+			'display' => $display,
 		);
 	}
 

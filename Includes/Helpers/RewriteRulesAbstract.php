@@ -26,6 +26,16 @@ abstract class RewriteRulesAbstract {
 	protected $tag_name = 'WebPify: Rewrite rules';
 
 	/**
+	 * Get the target configuration file path.
+	 */
+	abstract protected function get_file_path();
+
+	/**
+	 * Get the marked rewrite-rule contents.
+	 */
+	abstract protected function get_raw_new_contents();
+
+	/**
 	 * Add new contents to the file.
 	 */
 	public function add() {
@@ -64,18 +74,31 @@ abstract class RewriteRulesAbstract {
 			return $contents;
 		}
 
+		$contents = $this->merge_tagged_contents( $contents, $new_contents );
+
+		return $this->put_file_contents( $contents );
+	}
+
+	/**
+	 * Replace the marked rewrite rules while preserving unrelated contents.
+	 *
+	 * @param string $contents     Existing file contents.
+	 * @param string $new_contents New marked contents, or an empty string to remove them.
+	 */
+	protected function merge_tagged_contents( $contents, $new_contents ) {
+
 		$start_marker = '# BEGIN ' . $this->tag_name;
 		$end_marker   = '# END ' . $this->tag_name;
 
 		// Remove previous rules.
-		$contents = preg_replace( '/\s*?' . preg_quote( $start_marker, '/' ) . '.*' . preg_quote( $end_marker, '/' ) . '\s*?/isU', "\n\n", $contents );
+		$contents = preg_replace( '/\s*' . preg_quote( $start_marker, '/' ) . '.*?' . preg_quote( $end_marker, '/' ) . '\s*/is', "\n\n", $contents );
 		$contents = trim( $contents );
 
-		if ( $new_contents ) {
-			$contents = $new_contents . "\n\n" . $contents;
+		if ( '' !== trim( $new_contents ) ) {
+			$contents = trim( $new_contents ) . ( '' !== $contents ? "\n\n" . $contents : '' );
 		}
 
-		return $this->put_file_contents( $contents );
+		return $contents;
 	}
 
 	/**
@@ -108,7 +131,7 @@ abstract class RewriteRulesAbstract {
 		 */
 		$document_root     = realpath( sanitize_text_field( wp_unslash( $_SERVER['DOCUMENT_ROOT'] ?? '' ) ) ); // `realpath()` is needed for those cases where $_SERVER['DOCUMENT_ROOT'] is totally different from ABSPATH.
 		$document_root     = trailingslashit( str_replace( '\\', '/', $document_root ) );
-		$path_current_site = trim( str_replace( '\\', '/', PATH_CURRENT_SITE ), '/' );
+		$path_current_site = trim( str_replace( '\\', '/', constant( 'PATH_CURRENT_SITE' ) ), '/' );
 		$root_path         = trailingslashit( wp_normalize_path( $document_root . $path_current_site ) );
 
 		return $root_path;

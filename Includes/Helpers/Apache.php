@@ -32,9 +32,19 @@ class Apache extends RewriteRulesAbstract {
 	 * Get unfiltered new contents to write into the file.
 	 */
 	protected function get_raw_new_contents() {
-		$home_root = wp_parse_url( home_url( '/' ) );
-		$home_root = $home_root['path'];
-		$tag_name  = $this->tag_name;
+		$home_url  = wp_parse_url( home_url( '/' ) );
+		$home_root = $home_url['path'] ?? '/';
+
+		return $this->build_rules( $home_root );
+	}
+
+	/**
+	 * Build Apache rewrite rules.
+	 *
+	 * @param string $home_root Site URL path.
+	 */
+	protected function build_rules( $home_root ) {
+		$tag_name = $this->tag_name;
 
 		$content  = "# BEGIN $tag_name" . PHP_EOL;
 		$content .= '<IfModule mod_setenvif.c>' . PHP_EOL;

@@ -5,14 +5,23 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Coverage directory used by tools like istanbul
-coverage
+# Coverage output
+coverage/
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
 # Dependency directories
 node_modules/
+vendor/
+
+# PHPUnit output
+.phpunit.cache/
+.phpunit.result.cache
+
+# Local WordPress test installations
+wordpress/
+wordpress-tests-lib/
 
 # Optional npm cache directory
 .npm

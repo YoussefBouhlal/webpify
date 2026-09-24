@@ -37,6 +37,9 @@ final class RewriteRules {
 	 */
 	public static function add_rewrite_rules( $result, $server, $request ) {
 		if ( $request->get_route() === '/wp/v2/settings' && $request->get_method() === 'POST' ) {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $result;
+			}
 
 			$params           = $request->get_json_params();
 			$webpify_settings = $params['webpify_settings'] ?? '';

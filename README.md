@@ -80,18 +80,18 @@ Selecting a format controls future conversions. Changing the format does not aut
 
 ## New Upload Processing
 
-The upload path is registered on WordPress's `wp_handle_upload_prefilter` hook and is implemented by `Media::image_optimizition()` in [`Includes/Admin/Media.php`](Includes/Admin/Media.php).
+The upload path is registered on WordPress's `wp_handle_upload_prefilter` hook and is implemented by `Media::image_optimization()` in [`Includes/Admin/Media.php`](Includes/Admin/Media.php). The original misspelled method remains as a compatibility alias.
 
 The process is:
 
 1. Read the selected output format from `webpify_settings`.
-2. Validate the temporary file with `wp_getimagesize()` and `wp_get_image_mime()`.
-3. Continue only when the real image type is JPEG or PNG.
-4. Decode the image with `imagecreatefromjpeg()` or `imagecreatefrompng()`.
-5. Promote palette images to true color. PNG alpha transparency is retained during this operation.
-6. Encode the result over the temporary upload file:
+2. Validate the file's real MIME type and continue only for JPEG or PNG.
+3. Decode the image with `imagecreatefromjpeg()` or `imagecreatefrompng()`.
+4. Promote palette images to true color. PNG alpha transparency is retained during this operation.
+5. Encode to a temporary file beside the upload:
    - WebP uses quality `75`.
    - AVIF uses quality `50`.
+6. Atomically replace the temporary upload only after encoding succeeds.
 7. Update the upload array's MIME type and byte size.
 8. Return control to WordPress so it can move the file and generate its registered image sizes.
 
@@ -108,7 +108,7 @@ Existing Media Library attachments use a non-destructive sidecar strategy.
 - The full-size attachment file.
 - Every intermediate size recorded in WordPress attachment metadata.
 
-`Media::optimize_local_file()` then processes each JPEG or PNG independently:
+`Media::optimize_local_file()` delegates each JPEG or PNG to the same atomic image optimizer:
 
 1. Confirm that the file exists.
 2. Detect its real MIME type.
@@ -228,6 +228,7 @@ Each successful sidecar result records:
 | [`Includes/Main.php`](Includes/Main.php) | Checks requirements and boots admin and frontend modules |
 | [`Includes/Admin/Settings.php`](Includes/Admin/Settings.php) | Registers settings and renders the settings screen |
 | [`Includes/Admin/Media.php`](Includes/Admin/Media.php) | Converts uploads and media files, manages metadata, AJAX, cleanup, and bulk jobs |
+| [`Includes/Helpers/ImageOptimizer.php`](Includes/Helpers/ImageOptimizer.php) | Validates and atomically converts JPEG/PNG files with GD |
 | [`Includes/Admin/RewriteRules.php`](Includes/Admin/RewriteRules.php) | Adds or removes delivery rules when settings change |
 | [`Includes/Helpers/Apache.php`](Includes/Helpers/Apache.php) | Generates Apache delivery rules |
 | [`Includes/Helpers/Nginx.php`](Includes/Helpers/Nginx.php) | Generates Nginx delivery rules |
@@ -284,18 +285,53 @@ When rules are active and the sidecar exists, check for the expected `Content-Ty
 
 Also verify the response body when testing a proxy or CDN; some systems alter or cache headers independently of the origin server.
 
-### 4. Verify Project Quality Checks
+### 4. Run Automated Tests
 
 From the plugin directory:
 
 ```bash
+composer install
 composer lint
+composer compat
+composer test:unit
+```
+
+The WordPress integration suite requires SVN, a disposable MySQL database, and the WordPress 6.8 test library. Install it with:
+
+```bash
+bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1:3306 6.8
+```
+
+Then run the integration suite:
+
+```bash
+WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test:integration
+WP_TESTS_DIR=/tmp/wordpress-tests-lib WP_MULTISITE=1 composer test:integration
+```
+
+Run both PHP suites after the test library is installed:
+
+```bash
+WP_TESTS_DIR=/tmp/wordpress-tests-lib composer test
+```
+
+The isolated suite covers image conversion, rewrite-rule rendering and marker replacement, bulk progress calculation, and requirement checks. The WordPress suite covers plugin hooks, settings sanitization, rewrite authorization, media upload conversion, and cron termination.
+
+Frontend source checks remain available separately:
+
+```bash
 npm run lint:js
 npm run lint:css
 npm run build
 ```
 
-These commands validate source style and build the admin assets. The current automated test configuration does not provide behavioral coverage for image conversion or delivery, so manual integration checks remain necessary.
+AVIF tests are skipped when the current GD build does not expose `imageavif()`. The GitHub Actions workflow runs quality checks on PHP 7.4 and WordPress integration tests on PHP 7.4 through 8.4, including single-site and multisite jobs.
+
+For a distributable plugin build, install only runtime dependencies so PHPUnit and coding-standard packages are not shipped:
+
+```bash
+composer install --no-dev --classmap-authoritative
+```
 
 ## Troubleshooting
 

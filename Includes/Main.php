@@ -70,20 +70,9 @@ final class Main {
 	 */
 	private static function check_plugin_requirements() {
 
-		$errors = array();
 		global $wp_version;
-
-		if ( ! version_compare( PHP_VERSION, PLUGIN_REQUIREMENTS['php_version'], '>=' ) ) {
-			$errors[] = 1;
-		}
-
-		if ( ! version_compare( $wp_version, PLUGIN_REQUIREMENTS['wp_version'], '>=' ) ) {
-			$errors[] = 2;
-		}
-
-		if ( isset( PLUGIN_REQUIREMENTS['wc_version'] ) && ( ! defined( 'WC_VERSION' ) || ! version_compare( WC_VERSION, PLUGIN_REQUIREMENTS['wc_version'], '>=' ) ) ) {
-			$errors[] = 3;
-		}
+		$woocommerce_version = defined( 'WC_VERSION' ) ? constant( 'WC_VERSION' ) : null;
+		$errors              = self::get_requirement_errors( PHP_VERSION, $wp_version, PLUGIN_REQUIREMENTS, $woocommerce_version );
 
 		if ( empty( $errors ) ) {
 			return true;
@@ -120,5 +109,32 @@ final class Main {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Return requirement error codes for the supplied runtime versions.
+	 *
+	 * @param string      $php_version         PHP version.
+	 * @param string      $wp_version          WordPress version.
+	 * @param array       $requirements        Required versions.
+	 * @param string|null $woocommerce_version WooCommerce version, when loaded.
+	 * @return int[]
+	 */
+	public static function get_requirement_errors( $php_version, $wp_version, $requirements, $woocommerce_version = null ) {
+		$errors = array();
+
+		if ( ! version_compare( $php_version, $requirements['php_version'], '>=' ) ) {
+			$errors[] = 1;
+		}
+
+		if ( ! version_compare( $wp_version, $requirements['wp_version'], '>=' ) ) {
+			$errors[] = 2;
+		}
+
+		if ( isset( $requirements['wc_version'] ) && ( null === $woocommerce_version || ! version_compare( $woocommerce_version, $requirements['wc_version'], '>=' ) ) ) {
+			$errors[] = 3;
+		}
+
+		return $errors;
 	}
 }

@@ -1,0 +1,109 @@
+name: PHP Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Quality / PHP 7.4
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: fileinfo, gd, mbstring, mysqli, xml, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Validate Composer files
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run coding standards
+        run: composer lint
+
+      - name: Run PHP compatibility checks
+        run: composer compat
+
+      - name: Run unit tests
+        run: composer test:unit
+
+  integration:
+    name: WordPress 6.8 / PHP ${{ matrix.php }}${{ matrix.multisite && ' / Multisite' || '' }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php: '7.4'
+            multisite: false
+          - php: '8.0'
+            multisite: false
+          - php: '8.1'
+            multisite: false
+          - php: '8.2'
+            multisite: false
+          - php: '8.3'
+            multisite: false
+          - php: '8.4'
+            multisite: false
+          - php: '7.4'
+            multisite: true
+          - php: '8.4'
+            multisite: true
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --user=root --password=root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: fileinfo, gd, mbstring, mysqli, xml, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install --yes subversion
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Install WordPress test library
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+          WP_CORE_DIR: /tmp/wordpress
+        run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1:3306 6.8 true
+
+      - name: Run integration tests
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+          WP_MULTISITE: ${{ matrix.multisite && '1' || '0' }}
+        run: composer test:integration
